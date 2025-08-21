@@ -20,7 +20,6 @@ from ast_nodes import (
 
 class ASTBuilder(ModelBuilderSemantics):
 
-    # === Root ===
     def File(self, ast):
         # ast je lista (import | funcDef | mainFunc)
         return FileNode(statements=[s for s in ast if s is not None])
@@ -51,7 +50,6 @@ class ASTBuilder(ModelBuilderSemantics):
         return ParamNode(name=identifier, type=type)
 
     def paramList(self, ast):
-        # već vraća listu parametara
         return ast
 
     # === Definitions ===

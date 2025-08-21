@@ -1,20 +1,49 @@
-def pretty_print(node, indent=0):
-    pad = '  ' * indent
+from pprint import pprint
+
+def ast_to_dict(node):
     if isinstance(node, list):
-        print(f"{pad}[")
-        for item in node:
-            pretty_print(item, indent + 1)
-        print(f"{pad}]")
-    elif isinstance(node, tuple):
-        print(f"{pad}(")
-        for item in node:
-            pretty_print(item, indent + 1)
-        print(f"{pad})")
-    elif hasattr(node, '__dict__'):
-        print(f"{pad}{node.__class__.__name__}(")
-        for k, v in node.__dict__.items():
-            print(f"{pad}  {k}=", end="")
-            pretty_print(v, indent + 2)
-        print(f"{pad})")
-    else:
-        print(f"{pad}{repr(node)}")
+        return [ast_to_dict(n) for n in node]
+    if hasattr(node, '__dict__'):
+        return {k: ast_to_dict(v) for k, v in node.__dict__.items() if v is not None}
+    return node
+
+
+def pretty_print(node):
+    pprint(ast_to_dict(node))
+ 
+def mark_indentation(src: str) -> str:
+    lines = src.splitlines()
+    result = []
+    indent_stack = [0]
+
+    for line in lines:
+        stripped = line.lstrip("\t ")
+        if not stripped:
+            continue
+
+        # Izmeri indent level (pretpostavimo tab = 1 indent ili 4 space = 1 indent)
+        spaces = len(line) - len(stripped)
+        indent_level = spaces // 4 + line.count("\t")
+
+        current_indent = indent_stack[-1]
+
+        # Ako se smanjila indentacija dodaj DEDENT odmah iza prethodne linije
+        while indent_level < current_indent:
+            result[-1] += ";DEDENT;"
+            indent_stack.pop()
+            current_indent = indent_stack[-1]
+
+        # Ako je linija unutar bloka, dodaj ;INDENT; prefiks za svaku liniju
+        prefix = ";INDENT;" * indent_level
+        result.append(f"{prefix}{stripped}")
+
+        # Ako linija završava sa ":" uvećaj indent level za sledeću liniju
+        if stripped.endswith(":"):
+            indent_stack.append(indent_level + 1)
+
+    # Zatvaranje preostalih indentacija ako ih ima
+    while len(indent_stack) > 1:
+        result[-1] += ";DEDENT;"
+        indent_stack.pop()
+
+    return "\n"+(("\n".join(result)).replace(";INDENT;", ""))

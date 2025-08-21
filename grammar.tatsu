@@ -16,11 +16,11 @@ funcDef =
     {Newline Definition }* Newline ReturnExpr Dedent
     ;
 
-# parametri funkcije
+# Parametri funkcije
 paramList = param { ',' param } ;
 param = identifier ':' type ;
 
-# Jedna definicija unutar bloka
+# Definicija unutar bloka
 Definition
     = funcDef
     | ConstDef
@@ -65,7 +65,7 @@ Literal
 # Tipovi podataka
 type = identifier ;
 
-# operatori
+# Operatori
 operator
     = '+' | '-' | '*' | '/' | '%'
     | '==' | '!=' | '<' | '>' | '<=' | '>='
