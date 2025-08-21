@@ -1,0 +1,84 @@
+@@grammar::SONIC
+@@whitespace :: /[ \t\r]+/
+
+
+File = { Newline (import | funcDef | mainFunc) }* $ ;
+
+# Uvoz modula
+import = 'import' stringLiteral identifier ;
+
+# Glavna funkcija sa ovanom definicijom
+mainFunc = 'main' ':' {Newline Definition}+ Dedent ;
+
+# Definicija funkcije
+funcDef =
+    'def' type identifier '(' [ paramList ] ')' ':' 
+    {Newline Definition }* Newline ReturnExpr Dedent
+    ;
+
+# parametri funkcije
+paramList = param { ',' param } ;
+param = identifier ':' type ;
+
+# Jedna definicija unutar bloka
+Definition
+    = funcDef
+    | ConstDef
+    | VoidCall
+    ;
+
+# Konstanta ili promenljiva
+ConstDef = identifier '=' expression ;
+
+# Povratna vrednost funkcije
+ReturnExpr = expression ;
+
+# Poziv funkcije koja ne vraća vrednost
+VoidCall = identifier '(' [ argList ] ')' ;
+
+# Lista argumenata
+argList = expression { ',' expression } ;
+
+# Izrazi
+expression
+    = '(' expression ')'
+    | BinaryExpr
+    | importRef
+    | identifier '(' [ argList ] ')'
+    | identifier
+    | Literal
+    ;
+
+# Referenca na importovani modul
+importRef = identifier '.' identifier ;
+
+# Binarni operatori
+BinaryExpr = expression operator expression ;
+
+# Literali
+Literal
+    = number
+    | stringLiteral
+    | booleanLiteral
+    ;
+
+# Tipovi podataka
+type = identifier ;
+
+# operatori
+operator
+    = '+' | '-' | '*' | '/' | '%'
+    | '==' | '!=' | '<' | '>' | '<=' | '>='
+    ;
+
+# Identifikatori
+identifier = /[A-Za-z_][A-Za-z0-9_]*/ ;
+
+# Brojevi i stringovi
+number = /[0-9]+(?:\.[0-9]+)?/ ;
+stringLiteral = /"(?:[^"\\]|\\.)*"/ ;
+booleanLiteral = 'true' | 'false' ;
+
+# Specijalni tokeni za formatiranje
+Newline = /\n/ ;
+Dedent = ';DEDENT;' ;
