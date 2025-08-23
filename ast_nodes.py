@@ -4,6 +4,7 @@ from abc import ABC, abstractmethod
 
 
 # ===== AST ČVOROVI =====
+logicOperators = ['==','!=','>','>=','<','<=']
 
 @dataclass
 class FileNode:
@@ -21,35 +22,44 @@ class ParamNode:
 
 @dataclass
 class ExpressionNode(ABC):
-    value: any = field(default=None, init=False)
-    type: Optional[str] = field(default=None, init=False)
-    
+    @abstractmethod
+    def infer_type(self, context) -> str:
+        pass     
     
 @dataclass
 class BinaryExprNode(ExpressionNode):
     left: ExpressionNode
     op: str
     right: ExpressionNode
-    def _post_init__(self):
-        self.value = (self.left,self.op,self.right)
+    def infer_type(self, context):
+        lt = self.left.infer_type(context)
+        rt = self.right.infer_type(context)
+        if(lt==rt):
+            raise Exception("You can't do this operation on two operands of different type!")
+        if(self.op in logicOperators):
+            return 'Bool'
+        return lt
 
 @dataclass 
 class FuncCallNode(ExpressionNode):
     name: str
     arguments: List[ExpressionNode] = field(default_factory=list)
-    def _post_init__(self):
-        self.value = (self.name,self.arguments)
+    def infer_type(self, context):
+        return super().infer_type(context)
 
 @dataclass
-class LiteralNode:
+class LiteralNode(ExpressionNode):
     literal: any
     type: str = None
+    def infer_type(self, context):
+        return self.type
 
 @dataclass
-class IdentifierNode:
+class IdentifierNode(ExpressionNode):
     name: str
-        
-        
+    def infer_type(self, context):
+        return super().infer_type(context)
+        #return context.getType(self)       
         
 @dataclass
 class ConstDefNode:
