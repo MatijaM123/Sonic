@@ -63,7 +63,7 @@ class ASTBuilder(ModelBuilderSemantics):
             else:
                 flat.append(s)
         return FuncDefNode(
-            return_type=type.name,
+            return_type=type,
             name=identifier.name,
             params=[head]+[item[1] for item in tail],
             declarations=flat,
@@ -72,7 +72,7 @@ class ASTBuilder(ModelBuilderSemantics):
 
     def param(self, ast):
         identifier, dd, type = ast
-        return ParamNode(name=identifier.name, type=type.name)
+        return ParamNode(name=identifier.name, type=type)
 
     def paramList(self, ast):
         return ast
@@ -117,13 +117,13 @@ class ASTBuilder(ModelBuilderSemantics):
         return IdentifierNode(name=ast)
 
     def number(self, ast):
-        return LiteralNode(literal=float(ast) if '.' in ast else int(ast), type="number")
+        return LiteralNode(literal=float(ast) if '.' in ast else int(ast), type="Float" if '.' in ast else "Int")
 
     def stringLiteral(self, ast):
-        return LiteralNode(literal=ast.strip('"'), type="string")
+        return LiteralNode(literal=ast.strip('"'), type="String")
 
     def booleanLiteral(self, ast):
-        return LiteralNode(literal=(ast == "true"), type="bool")
+        return LiteralNode(literal=(ast == "true"), type="Bool")
 
     def argList(self, ast):
         return list(ast)

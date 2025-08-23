@@ -69,7 +69,7 @@ Literal
     ;
 
 # Tipovi podataka
-type = identifier ;
+type = 'String'| 'Bool'| 'Int'| 'Float'| 'Signal' ;
 
 # Operatori
 operator
