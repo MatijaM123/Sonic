@@ -1,0 +1,12 @@
+import "a" a
+
+main:
+ 
+    t=3
+    def Int func(x: Int):
+        t=2
+        def Int f(t: Signal):
+            sklekovi
+        t+a
+def String a(a: String):
+    asfs
