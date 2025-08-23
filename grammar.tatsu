@@ -34,26 +34,32 @@ ConstDef = identifier '=' expression ;
 ReturnExpr = expression ;
 
 # Poziv funkcije koja ne vraća vrednost
-VoidCall = identifier '(' [ argList ] ')' ;
+VoidCall = 'void' identifier '('  [argList] ')' ;
 
 # Lista argumenata
 argList = expression { ',' expression } ;
 
 # Izrazi
 expression
-    = '(' expression ')'
-    | BinaryExpr
+    = BinaryExpr
+    | parenExpr
     | importRef
-    | identifier '(' [ argList ] ')'
+    | funcCall
     | identifier
     | Literal
     ;
+
+#poziv funkcije
+funcCall = identifier '(' [ argList ] ')';
 
 # Referenca na importovani modul
 importRef = identifier '.' identifier ;
 
 # Binarni operatori
 BinaryExpr = expression operator expression ;
+
+# Izraz u zagradi
+parenExpr = '(' expression ')';
 
 # Literali
 Literal
@@ -75,7 +81,7 @@ operator
 identifier = /[A-Za-z_][A-Za-z0-9_]*/ ;
 
 # Brojevi i stringovi
-number = /[0-9]+(?:\.[0-9]+)?/ ;
+number = /-?[0-9]+(?:\.[0-9]+)?/ ;
 stringLiteral = /"(?:[^"\\]|\\.)*"/ ;
 booleanLiteral = 'true' | 'false' ;
 

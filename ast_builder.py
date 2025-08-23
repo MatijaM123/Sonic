@@ -15,14 +15,22 @@ from ast_nodes import (
     FuncDefNode,
     VoidCallNode,
     MainFuncNode,
+    ParenExprNode
 )
 
 
 class ASTBuilder(ModelBuilderSemantics):
 
     def File(self, ast):
-        # ast je lista (import | funcDef | mainFunc)
-        return FileNode(statements=[s for s in ast if s is not None])
+        flat = []
+        for s in ast:
+            if s is None:
+                continue
+            if isinstance(s, list):  # <- tu hvataš višak []
+                flat.extend(s)
+            else:
+                flat.append(s)
+        return FileNode(statements=flat)
 
     # === Imports ===
     def import_(self, ast):
@@ -31,23 +39,40 @@ class ASTBuilder(ModelBuilderSemantics):
 
     # === Main func ===
     def mainFunc(self, ast):
-        return MainFuncNode(definitions=ast)
+        p1,p2,definitions,p3 = ast
+        flat = []
+        for s in definitions:
+            if s is None:
+                continue
+            if isinstance(s, list):  # <- tu hvataš višak []
+                flat.extend(s)
+            else:
+                flat.append(s)
+        return MainFuncNode(definitions=flat)
 
     # === Function definition ===
     def funcDef(self, ast):
         p1,type,identifier,p2,paramList,p3,p4,declarations,p5,ReturnExpr,dedent=ast   
         head, tail = paramList
+        flat = []
+        for s in declarations:
+            if s is None:
+                continue
+            if isinstance(s, list):  # <- tu hvataš višak []
+                flat.extend(s)
+            else:
+                flat.append(s)
         return FuncDefNode(
-            return_type=type,
-            name=identifier,
-            params=(tail.insert(0,head)) or [],
-            declarations=declarations,
+            return_type=type.name,
+            name=identifier.name,
+            params=[head]+[item[1] for item in tail],
+            declarations=flat,
             return_expr=ReturnExpr,
         )
 
     def param(self, ast):
         identifier, dd, type = ast
-        return ParamNode(name=identifier, type=type)
+        return ParamNode(name=identifier.name, type=type.name)
 
     def paramList(self, ast):
         return ast
@@ -55,15 +80,17 @@ class ASTBuilder(ModelBuilderSemantics):
     # === Definitions ===
     def ConstDef(self, ast):
         identifier, eq, expression=ast
-        return ConstDefNode(name=identifier, value=expression)
+        return ConstDefNode(name=identifier.name, value=expression)
 
     def VoidCall(self, ast):
-        return VoidCallNode(name=ast.identifier, args=ast.argList or [])
+        void,identifier,p1, head, tail,p2 = ast
+        
+        return VoidCallNode(name=identifier.name, args=[head]+[item[1] for item in tail] or [])
 
     # === Expressions ===
     def expression(self, ast):
         # Ako već ExpressionNode, vrati ga
-        if isinstance(ast, ExpressionNode):
+        if isinstance(ast, (ExpressionNode,IdentifierNode,LiteralNode)):
             return ast
         if isinstance(ast, str):
             return IdentifierNode(name=ast)
@@ -82,6 +109,8 @@ class ASTBuilder(ModelBuilderSemantics):
         return a
 
     def Literal(self, ast):
+        if isinstance(ast, LiteralNode):
+            return ast
         return LiteralNode(literal=ast)
 
     def identifier(self, ast):
@@ -99,6 +128,10 @@ class ASTBuilder(ModelBuilderSemantics):
     def argList(self, ast):
         return list(ast)
 
-    def FuncCall(self, ast):
-        name, args = ast
-        return FuncCallNode(name=name, arguments=args or [])
+    def funcCall(self, ast):
+        identifier,p1, head, tail,p2 = ast
+        return FuncCallNode(name=identifier.name, arguments=[head]+[item[1] for item in tail] or [])
+    
+    def parenExpr(self,ast):
+        lp,expr,rp = ast
+        return ParenExprNode(expr=expr)

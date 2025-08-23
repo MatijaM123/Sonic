@@ -1,5 +1,7 @@
 from dataclasses import dataclass, field
-from typing import List, Optional, Union
+from typing import List, Optional
+from abc import ABC, abstractmethod
+
 
 # ===== AST ČVOROVI =====
 
@@ -18,7 +20,7 @@ class ParamNode:
     type: str
 
 @dataclass
-class ExpressionNode:
+class ExpressionNode(ABC):
     value: any = field(default=None, init=False)
     type: Optional[str] = field(default=None, init=False)
     
@@ -42,14 +44,10 @@ class FuncCallNode(ExpressionNode):
 class LiteralNode:
     literal: any
     type: str = None
-    def __post_init__(self):
-        self.value = self.literal
 
 @dataclass
 class IdentifierNode:
     name: str
-    def __post_init__(self):
-        self.value = self.name
         
         
         
@@ -74,3 +72,7 @@ class VoidCallNode:
 @dataclass
 class MainFuncNode:
     definitions: List
+    
+@dataclass
+class ParenExprNode(ExpressionNode):
+    expr: ExpressionNode
