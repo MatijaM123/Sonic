@@ -86,8 +86,8 @@ class MainFuncNode:
 @dataclass
 class ParenExprNode(ExpressionNode):
     expr: ExpressionNode
-    
-    
+    def infer_type(self,context):
+        return self.expr.infer_type(context) 
 class Context:
     def __init__(self, parent=None):
         self.symbols = {}      # ime → tip

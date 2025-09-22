@@ -97,7 +97,7 @@ def analyze_file(fnode: FileNode):
     def add_function_declarations_to_context(declarations, context):
         for declaration in declarations:
             if isinstance(declaration, ConstDefNode):
-                context.declare(declaration.name,declaration.value.infer_type())
+                context.declare(declaration.name,declaration.value.infer_type(context))
             elif isinstance(declaration, FuncDefNode):
                 context.declare(declaration.name,generate_function_type(declaration))
                 analyze_function(declaration,context)
@@ -142,11 +142,7 @@ def analyze_file(fnode: FileNode):
             file_ctx.declare("main", "Void")
             analyze_main(stmt, file_ctx)
     
-    
-    
     return file_ctx
-
-
 
 def generate_function_type(func: FuncDefNode):
     return namedtuple("FuncType", ["returnType","paramTypes"]) (func.return_type, list(map(lambda x: x.type ,func.params)))
