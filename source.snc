@@ -1,12 +1,13 @@
 import "a" a
 
 main:
- 
+    sklekovi = 5
     t=3
     def Int func(x: Int):
+        a = 3
         t=2
         def Int f(t: Signal):
             sklekovi
-        t+a
+        t+func(x-1)
 def String a(a: String):
-    asfs
+    a

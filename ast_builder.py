@@ -48,7 +48,7 @@ class ASTBuilder(ModelBuilderSemantics):
                 flat.extend(s)
             else:
                 flat.append(s)
-        return MainFuncNode(definitions=flat)
+        return MainFuncNode(declarations=flat)
 
     # === Function definition ===
     def funcDef(self, ast):
