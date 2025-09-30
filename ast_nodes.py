@@ -1,7 +1,8 @@
 from dataclasses import dataclass, field
-from typing import List, Optional
+from typing import List
 from abc import ABC, abstractmethod
-
+from context import Context
+from cpp_generator import convert_type
 
 # ===== AST ČVOROVI =====
 logicOperators = ['==','!=','>','>=','<','<=']
@@ -9,16 +10,29 @@ logicOperators = ['==','!=','>','>=','<','<=']
 @dataclass
 class FileNode:
     statements: List
+    def to_cpp(self, context: Context) -> str:
+        cpp = []
+        i = 0
+        for statement in self.statements:
+            if(not isinstance(statement,ImportNode)):
+                cpp.append(statement.to_cpp(context.children[i]))
+                i += 1
+            cpp.append(statement.to_cpp(context))
+        return "\n".join(cpp)
 
 @dataclass
 class ImportNode:
     module_path: str
     alias: str
+    def to_cpp(self, context: Context) -> str:
+        return ""
 
 @dataclass
 class ParamNode:
     name: str
     type: str
+    def to_cpp(self, context: Context) -> str:
+        return f"{convert_type(self.type)} {self.name}"
 
 @dataclass
 class ExpressionNode(ABC):
@@ -39,6 +53,8 @@ class BinaryExprNode(ExpressionNode):
         if(self.op in logicOperators):
             return 'Bool'
         return lt
+    def to_cpp(self, context: Context) -> str:
+        return f"{self.left.to_cpp(context)}{self.op}{self.right.to_cpp(context)}"
 
 @dataclass 
 class FuncCallNode(ExpressionNode):
@@ -46,6 +62,8 @@ class FuncCallNode(ExpressionNode):
     arguments: List[ExpressionNode] = field(default_factory=list)
     def infer_type(self, context):
         return context.lookup_func(self)
+    def to_cpp(self, context: Context) -> str:
+        return f"{self.name}({", ".join(map(lambda x: x.to_cpp(context),self.arguments))})"
 
 @dataclass
 class LiteralNode(ExpressionNode):
@@ -53,6 +71,8 @@ class LiteralNode(ExpressionNode):
     type: str = None
     def infer_type(self, context = None):
         return self.type
+    def to_cpp(self, context: Context) -> str:
+        return f"{self.literal}"
 
 @dataclass
 class IdentifierNode(ExpressionNode):
@@ -60,11 +80,15 @@ class IdentifierNode(ExpressionNode):
     type: str = None
     def infer_type(self,context):
         return context.lookup_var(self.name)  
+    def to_cpp(self, context: Context) -> str:
+        return f"{self.name}"
         
 @dataclass
 class ConstDefNode:
     name: str
     value: ExpressionNode
+    def to_cpp(self, context: Context) -> str:
+        return f"{convert_type(context.lookup_var(self.name))} {self.name} = {self.value.to_cpp(context)};"
     
 @dataclass
 class FuncDefNode:
@@ -73,11 +97,16 @@ class FuncDefNode:
     params: List[ParamNode]
     declarations: List
     return_expr: ExpressionNode
+    def to_cpp(self, context: Context) -> str:
+        return f"{self.name}"
     
 @dataclass
 class VoidCallNode:
     name: str
     args: List[ExpressionNode]
+    def to_cpp(self, context: Context) -> str:
+        return f"{self.name}({', '.join(map(lambda x: x.to_cpp(context), self.args))})"
+
     
 @dataclass
 class MainFuncNode:
@@ -88,40 +117,5 @@ class ParenExprNode(ExpressionNode):
     expr: ExpressionNode
     def infer_type(self,context):
         return self.expr.infer_type(context) 
-class Context:
-    def __init__(self, parent=None):
-        self.symbols = {}      # ime → tip
-        self.parent = parent   # za ugnježdene scope-ove (funkcije, blokovi...)
-        self.children = []
-        
-        if parent:
-            parent.children.append(self)
-
-    def declare(self, name, type_):
-        if name in self.symbols:
-            raise Exception(f"Redefinition of '{name}'")
-        
-        self.symbols[name] = type_
-
-    def lookup_var(self, name):
-        if name in self.symbols:
-            return self.symbols[name]
-        if self.parent:
-            return self.parent.lookup_var(name)
-        raise Exception(f"Undeclared identifier '{name}'")
-    
-    def lookup_func_recursive(self, fcall: FuncCallNode, types):
-        if(fcall.name in self.symbols and self.symbols[fcall.name].paramTypes == types):
-            return self.symbols[fcall.name].returnType
-        if  self.parent:
-            return self.parent.lookup_func_recursive(fcall,types)
-        raise Exception(f"No function with this signature: {fcall.name}{types} exists in this scope!")
-        #poželjno malo optimizovati
-    
-    
-    def lookup_func(self, fcall: FuncCallNode): #generišu se tipovi parametara (unutar trenutnog konteksta) na osnovu tipova izraza argumenata i onda se rekurzivno traži odgovarajuća funkcija kroz trenutni kontekst i kontekste koji sadrže njega
-        types = list(map(lambda x: x.infer_type(self),fcall.arguments))
-        return self.lookup_func_recursive(fcall,types)        
-        
-        
-    
+    def to_cpp(self, context: Context) -> str:
+        return f"({self.expr.to_cpp(context)})"

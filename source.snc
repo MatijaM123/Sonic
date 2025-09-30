@@ -1,2 +1,7 @@
 main:
     sklekovi = 2 * (1+3)
+
+def Int d(a: Int, b: Int):
+    def Int t(k: Int):
+        k+a
+    b+t(a)
