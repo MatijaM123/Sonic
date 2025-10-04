@@ -2,7 +2,7 @@ from dataclasses import dataclass, field
 from typing import List
 from abc import ABC, abstractmethod
 from context import Context
-from cpp_generator import convert_type
+from cpp_generator import convert_type, isRef
 
 # ===== AST ČVOROVI =====
 logicOperators = ['==','!=','>','>=','<','<=']
@@ -17,7 +17,7 @@ class FileNode:
             if(not isinstance(statement,ImportNode)):
                 cpp.append(statement.to_cpp(context.children[i]))
                 i += 1
-            cpp.append(statement.to_cpp(context))
+            else: cpp.append(statement.to_cpp(context))
         return "\n".join(cpp)
 
 @dataclass
@@ -63,7 +63,7 @@ class FuncCallNode(ExpressionNode):
     def infer_type(self, context):
         return context.lookup_func(self)
     def to_cpp(self, context: Context) -> str:
-        return f"{self.name}({", ".join(map(lambda x: x.to_cpp(context),self.arguments))})"
+        return f"{self.name}({', '.join(map(lambda x: x.to_cpp(context), self.arguments))})"
 
 @dataclass
 class LiteralNode(ExpressionNode):
@@ -98,7 +98,19 @@ class FuncDefNode:
     declarations: List
     return_expr: ExpressionNode
     def to_cpp(self, context: Context) -> str:
-        return f"{self.name}"
+        cpp = []
+        i = 0
+        for declaration in self.declarations:
+            if(isinstance(declaration,FuncDefNode)):
+                cpp.append(declaration.to_cpp(context.children[i]))
+                i += 1
+            else: cpp.append(declaration.to_cpp(context))
+            
+        cpp.append(f"return {self.return_expr.to_cpp(context)};")
+        capture = ", ".join(map(lambda x: f"{'&' if isRef(context.used_symbols[x]) else ''}{x}", context.used_symbols.keys()))   
+        params =  ", ".join(map(lambda param: param.to_cpp(context), self.params))  
+        body =  '\n'.join(cpp)     
+        return f"auto {self.name} = [{capture}] ({params}) {{\n{body}\n}};"
     
 @dataclass
 class VoidCallNode:
@@ -111,6 +123,17 @@ class VoidCallNode:
 @dataclass
 class MainFuncNode:
     declarations: List
+    def to_cpp(self, context: Context) -> str:
+        cpp = []
+        i = 0
+        for statement in self.declarations:
+            if(isinstance(statement,FuncDefNode)):
+                cpp.append(statement.to_cpp(context.children[i]))
+                i += 1
+            else: cpp.append(statement.to_cpp(context))  
+        cpp.append("return 0;")
+        body = "\n".join(cpp)
+        return f"int main(){{\n{body}\n}}"
     
 @dataclass
 class ParenExprNode(ExpressionNode):

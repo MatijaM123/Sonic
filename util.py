@@ -152,3 +152,15 @@ def print_context(ctx, indent=0):
     print("  " * indent + f"Context: {ctx.symbols} {ctx.used_symbols}")
     for child in ctx.children:
         print_context(child, indent + 1)
+        
+        
+def print_cpp(cpp: str):
+    lines = cpp.split("\n")
+    indents = 0
+    for line in lines:
+        if(line[0] == "}"):
+            indents-=1
+        indent = indents*"\t"
+        print(f"{indent}{line}")
+        if(line[len(line)-1] == "{"):
+            indents+=1

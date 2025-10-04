@@ -3,5 +3,7 @@ main:
 
 def Int d(a: Int, b: Int):
     def Int t(k: Int):
-        k+a
+        def Int l(a: Int):
+            a+b
+        k * k
     b+t(a)
