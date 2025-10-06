@@ -3,7 +3,7 @@ from typing import List
 from abc import ABC, abstractmethod
 from context import Context
 from cpp_generator import convert_type, isRef
-
+from ast_types import *
 # ===== AST ČVOROVI =====
 logicOperators = ['==','!=','>','>=','<','<=']
 

@@ -1,7 +1,6 @@
 # ast_builder.py
 from tatsu.semantics import ModelBuilderSemantics
-from typing import List
-
+from ast_types import *
 from ast_nodes import (
     FileNode,
     ImportNode,
@@ -15,7 +14,8 @@ from ast_nodes import (
     FuncDefNode,
     VoidCallNode,
     MainFuncNode,
-    ParenExprNode
+    ParenExprNode,
+    FunctionType,
 )
 
 
@@ -52,8 +52,14 @@ class ASTBuilder(ModelBuilderSemantics):
 
     # === Function definition ===
     def funcDef(self, ast):
-        p1,type,identifier,p2,paramList,p3,p4,declarations,p5,ReturnExpr,dedent=ast   
-        head, tail = paramList
+        params = []
+        try:
+            p1,type,identifier,p2,paramList,p3,p4,declarations,p5,ReturnExpr,dedent=ast   
+        except:
+            p1,type,identifier,p2,p3,p4,declarations,p5,ReturnExpr,dedent=ast   
+        else: 
+            head, tail = paramList
+            params = [head]+[item[1] for item in tail] 
         flat = []
         for s in declarations:
             if s is None:
@@ -65,7 +71,7 @@ class ASTBuilder(ModelBuilderSemantics):
         return FuncDefNode(
             return_type=type,
             name=identifier.name,
-            params=[head]+[item[1] for item in tail],
+            params=params,
             declarations=flat,
             return_expr=ReturnExpr,
         )
@@ -83,9 +89,16 @@ class ASTBuilder(ModelBuilderSemantics):
         return ConstDefNode(name=identifier.name, value=expression)
 
     def VoidCall(self, ast):
-        void,identifier,p1, head, tail,p2 = ast
-        
-        return VoidCallNode(name=identifier.name, args=[head]+[item[1] for item in tail] or [])
+        arguments = []
+        try:
+            void,identifier,p1, argList,p2 = ast
+        except:
+            void,identifier,p1,p2 = ast
+        else:
+            head, tail = argList
+            arguments = [head]+[item[1] for item in tail]
+          
+        return VoidCallNode(name=identifier.name, args=arguments)
 
     # === Expressions ===
     def expression(self, ast):
@@ -117,21 +130,53 @@ class ASTBuilder(ModelBuilderSemantics):
         return IdentifierNode(name=ast)
 
     def number(self, ast):
-        return LiteralNode(literal=float(ast) if '.' in ast else int(ast), type="Float" if '.' in ast else "Int")
+        return LiteralNode(literal=float(ast) if '.' in ast else int(ast), type=BasicType("Float") if '.' in ast else BasicType("Int"))
 
     def stringLiteral(self, ast):
-        return LiteralNode(literal=ast.strip('"'), type="String")
+        return LiteralNode(literal=ast.strip('"'), type=BasicType("String"))
 
     def booleanLiteral(self, ast):
-        return LiteralNode(literal=(ast == "true"), type="Bool")
+        return LiteralNode(literal=(ast == "true"), type=BasicType("Bool"))
 
     def argList(self, ast):
-        return list(ast)
+        return ast
 
     def funcCall(self, ast):
-        identifier,p1, head, tail,p2 = ast
-        return FuncCallNode(name=identifier.name, arguments=[head]+[item[1] for item in tail] or [])
+        arguments = []
+        try:
+            identifier,p1, argList,p2 = ast
+        except:
+            identifier,p1,p2 = ast
+        else:
+            head, tail= argList
+            arguments = [head]+[item[1] for item in tail]
+        return FuncCallNode(name=identifier.name, arguments= arguments)
     
     def parenExpr(self,ast):
         lp,expr,rp = ast
         return ParenExprNode(expr=expr)
+    
+    
+    
+    def type(self, ast):
+        return ast
+
+    def basicType(self, ast):
+        return BasicType(ast.name)
+
+    def listType(self, ast):
+        return ListType(ast.inner)
+
+    def functionType(self, ast):
+        arg_types = ast.args or []
+        return_type = ast.ret
+        return FunctionType(arg_types, return_type)
+
+    def typeList(self, ast):
+        list=[ast.first]
+        if ast.rest: 
+            for m in ast.rest: 
+                list.append(m.more)
+        return list  
+    
+    

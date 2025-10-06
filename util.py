@@ -1,9 +1,8 @@
 from pprint import pprint
 from anytree import Node, RenderTree
 from ast_nodes import *
-from collections import namedtuple;
 from context import Context
-
+from ast_types import *
 def ast_to_dict(node):
     if isinstance(node, list):
         return [ast_to_dict(n) for n in node]
@@ -140,13 +139,13 @@ def analyze_file(fnode: FileNode):
         elif isinstance(stmt, ImportNode):
             pass #treba implementirati import
         elif isinstance(stmt, MainFuncNode):
-            file_ctx.declare("main", namedtuple("FuncType", ["returnType","paramTypes"]) ("Void", []))
+            file_ctx.declare("main",FunctionType([],BasicType("Int")))
             analyze_main(stmt, file_ctx)
     
     return file_ctx
 
 def generate_function_type(func: FuncDefNode):
-    return namedtuple("FuncType", ["returnType","paramTypes"]) (func.return_type, list(map(lambda x: x.type ,func.params)))
+    return FunctionType(list(map(lambda x: x.type ,func.params)),func.return_type)
 
 def print_context(ctx, indent=0):
     print("  " * indent + f"Context: {ctx.symbols} {ctx.used_symbols}")

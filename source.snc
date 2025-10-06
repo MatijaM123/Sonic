@@ -1,9 +1,12 @@
 main:
     sklekovi = 2 * (1+3)
-
-def Int d(a: Int, b: Int):
+    def Int k(t : [[Int]]):
+        p = t
+        5
+def Int d(a: Int, b: Int, c: Signal):
     def Int t(k: Int):
-        def Int l(a: Int):
+        def Int l():
+            p = c
             a+b
-        k * k
+        k * k + t(k-1)
     b+t(a)
