@@ -1,12 +1,12 @@
-import "a" a
-
 main:
- 
-    t=3
-    def Int func(x: Int):
-        t=2
-        def Int f(t: Signal):
-            sklekovi
-        t+a
-def String a(a: String):
-    asfs
+    sklekovi = 2 * (1+3)
+    def Int k(t : [[Int]]):
+        p = t
+        5
+def Int d(a: Int, b: Int, c: Signal):
+    def Int t(k: Int):
+        def Int l():
+            p = c
+            a+b
+        k * k + t(k-1)
+    b+t(a)

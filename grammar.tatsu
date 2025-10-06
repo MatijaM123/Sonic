@@ -69,7 +69,11 @@ Literal
     ;
 
 # Tipovi podataka
-type = 'String'| 'Bool'| 'Int'| 'Float'| 'Signal' ;
+type = basicType | listType | functionType ;
+typeList = first:type rest:{',' more:type};
+basicType = name:('String' | 'Bool' | 'Int' | 'Float' | 'Signal') ;
+listType = '[' inner:type ']' ;
+functionType = '{' args:[typeList] '->' ret:[type] '}' ;
 
 # Operatori
 operator

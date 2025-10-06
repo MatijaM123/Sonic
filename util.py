@@ -1,6 +1,8 @@
 from pprint import pprint
 from anytree import Node, RenderTree
-
+from ast_nodes import *
+from context import Context
+from ast_types import *
 def ast_to_dict(node):
     if isinstance(node, list):
         return [ast_to_dict(n) for n in node]
@@ -89,3 +91,75 @@ def pretty_print2(fnode):
         except UnicodeEncodeError:
             print(f"{pre}{node.name}".encode("utf-8", errors="replace").decode("utf-8"))
 
+
+def analyze_file(fnode: FileNode):
+    
+    def add_function_declarations_to_context(declarations, context):
+        for declaration in declarations:
+            if isinstance(declaration, ConstDefNode):
+                context.declare(declaration.name,declaration.value.infer_type(context))
+            elif isinstance(declaration, FuncDefNode):
+                context.declare(declaration.name,generate_function_type(declaration))
+                analyze_function(declaration,context)
+            elif isinstance(declaration, VoidCallNode):
+                pass
+            else:
+                raise Exception("What you tried to do is neither constant definition, function definition nor void call.")
+    
+    def analyze_main(main: MainFuncNode, context: Context):
+        main_ctx = Context(parent=context)
+        add_function_declarations_to_context(main.declarations,main_ctx)
+        
+    def analyze_function(func: FuncDefNode, context: Context):
+        # kreiranje novog scope-a za funkciju
+        func_ctx = Context(parent=context)
+
+        # dodavanje parametara funkicje
+        for p in func.params:
+            func_ctx.declare(p.name, p.type)
+
+        # dodavanje lokalnih konstanti(definicija)
+        add_function_declarations_to_context(func.declarations, func_ctx)
+        
+        # provera tipa return izaza
+        ret_type = func.return_expr.infer_type(func_ctx)
+        if ret_type != func.return_type:
+            raise Exception(f"Return type mismatch: expected {func.return_type}, got {ret_type}")
+        
+        return func_ctx
+    
+    file_ctx = Context()
+    
+    for stmt in fnode.statements:
+        if isinstance(stmt , FuncDefNode):
+            if(stmt.name == "main"):
+                raise Exception("You can't name non main function main")
+            file_ctx.declare(stmt.name,generate_function_type(stmt))
+            analyze_function(stmt,file_ctx)
+        elif isinstance(stmt, ImportNode):
+            pass #treba implementirati import
+        elif isinstance(stmt, MainFuncNode):
+            file_ctx.declare("main",FunctionType([],BasicType("Int")))
+            analyze_main(stmt, file_ctx)
+    
+    return file_ctx
+
+def generate_function_type(func: FuncDefNode):
+    return FunctionType(list(map(lambda x: x.type ,func.params)),func.return_type)
+
+def print_context(ctx, indent=0):
+    print("  " * indent + f"Context: {ctx.symbols} {ctx.used_symbols}")
+    for child in ctx.children:
+        print_context(child, indent + 1)
+        
+        
+def print_cpp(cpp: str):
+    lines = cpp.split("\n")
+    indents = 0
+    for line in lines:
+        if(line[0] == "}"):
+            indents-=1
+        indent = indents*"\t"
+        print(f"{indent}{line}")
+        if(line[len(line)-1] == "{"):
+            indents+=1
